@@ -20,3 +20,5 @@ const getUserByEmai = async (email) => {
 
   return user;
 };
+
+export { getUserById, getUserByEmai };

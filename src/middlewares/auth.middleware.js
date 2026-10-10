@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import AppError from "../utils/AppError";
+import AppError from "../utils/AppError.js";
 
 const protect = (req, res, next) => {
   const cookieName = process.env.COOKIE_NAME || "access_token";
