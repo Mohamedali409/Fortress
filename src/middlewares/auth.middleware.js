@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
+import { cookieName } from "../config/auth-cookie.js";
 import AppError from "../utils/AppError.js";
 
 const protect = (req, res, next) => {
-  const cookieName = process.env.COOKIE_NAME || "access_token";
   const token = req.cookies?.[cookieName];
 
   if (!token) {
@@ -10,7 +10,9 @@ const protect = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
 
     if (!decoded.sub) {
       return next(new AppError("Invalid authentication token", 401));

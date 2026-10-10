@@ -15,6 +15,8 @@ vi.mock("../src/modules/users/user.repository.js", () => ({
 
 const repo = await import("../src/modules/users/user.repository.js");
 const { default: app } = await import("../src/app.js");
+const { default: loginRateLimit } =
+  await import("../src/middlewares/login-rate-limit.middleware.js");
 
 const ID = "64b7f0c2a1b2c3d4e5f60718";
 const dbUser = {
@@ -26,7 +28,11 @@ const dbUser = {
 const tokenFor = (sub = ID, opts = {}) =>
   jwt.sign({ sub }, process.env.JWT_SECRET, { expiresIn: "15m", ...opts });
 
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.resetAllMocks();
+  loginRateLimit.resetKey("::ffff:127.0.0.1");
+  loginRateLimit.resetKey("127.0.0.1");
+});
 
 describe("GET /api/health", () => {
   it("returns 200", async () => {
@@ -69,6 +75,9 @@ describe("POST /api/auth/login (regression)", () => {
       .send({ email: "e@x.com", password: "password123" });
     expect(res.status).toBe(201);
     expect(res.headers["set-cookie"][0]).toMatch(/access_token=.+HttpOnly/);
+    expect(res.headers["set-cookie"][0]).toMatch(/SameSite=Strict/);
+    expect(res.headers["set-cookie"][0]).toMatch(/Path=\//);
+    expect(res.headers["set-cookie"][0]).toMatch(/Max-Age=899|Max-Age=900/);
   });
   it("401 on wrong password", async () => {
     repo.findByEmail.mockResolvedValue({
@@ -86,6 +95,23 @@ describe("POST /api/auth/login (regression)", () => {
       .post("/api/auth/login")
       .send({ email: "e@x.com", password: "password123" });
     expect(res.status).toBe(401);
+  });
+
+  it("limits repeated login attempts from one IP", async () => {
+    repo.findByEmail.mockResolvedValue(null);
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({ email: "e@x.com", password: "password123" });
+      expect(res.status).toBe(401);
+    }
+
+    const limited = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "e@x.com", password: "password123" });
+    expect(limited.status).toBe(429);
+    expect(limited.body.message).toMatch(/too many login attempts/i);
   });
 });
 
