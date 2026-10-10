@@ -42,8 +42,10 @@ const login = async ({ email, password }) => {
   if (!isPasswordCorrect) throw new AppError("Invalid email or password", 401);
 
   const token = jwt.sign({ sub: user._id.toString() }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+    expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+    algorithm: "HS256",
   });
+  const { exp } = jwt.decode(token);
 
   return {
     user: {
@@ -52,6 +54,7 @@ const login = async ({ email, password }) => {
       email: user.email,
     },
     token,
+    expiresAt: exp * 1000,
   };
 };
 

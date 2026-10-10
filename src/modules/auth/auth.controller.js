@@ -1,4 +1,5 @@
 import asyncHandler from "../../utils/asyncHandler.js";
+import { cookieName, cookieOptions } from "../../config/auth-cookie.js";
 import * as userService from "./auth.service.js";
 
 const register = asyncHandler(async (req, res) => {
@@ -14,14 +15,11 @@ const register = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-  const { user, token } = await userService.login(req.body);
+  const { user, token, expiresAt } = await userService.login(req.body);
 
-  res.cookie("access_token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 15 * 60 * 1000,
+  res.cookie(cookieName, token, {
+    ...cookieOptions,
+    maxAge: Math.max(0, expiresAt - Date.now()),
   });
 
   res.status(201).json({
@@ -34,12 +32,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-  res.clearCookie("access_token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
+  res.clearCookie(cookieName, cookieOptions);
 
   res.status(200).json({
     success: true,
