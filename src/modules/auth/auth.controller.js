@@ -33,4 +33,18 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login };
+const logout = asyncHandler(async (req, res) => {
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "logout successful",
+  });
+});
+
+export { register, login, logout };

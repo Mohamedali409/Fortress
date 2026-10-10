@@ -6,6 +6,7 @@ import errorHandler from "./middlewares/error.middleware.js";
 
 //routers
 import authRouter from "./modules/auth/auth.routes.js";
+import userRouter from "./modules/users/user.routes.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
 
 app.use(errorHandler);
 
