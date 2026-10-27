@@ -14,7 +14,7 @@ const getUserById = async (userId) => {
 const getUserByEmai = async (email) => {
   const normaliazedEmail = email.trim().toLowerCase();
   const user = await userRepository.findByEmail(normaliazedEmail);
-  if (!email) {
+  if (!user) {
     throw new AppError("User not found", 404);
   }
 
